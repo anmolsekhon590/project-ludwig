@@ -1,8 +1,11 @@
 package com.anmolsekhon.projectludwig.controllers;
 
 
+import com.anmolsekhon.projectludwig.beans.Song;
 import com.anmolsekhon.projectludwig.beans.UploadFileResponse;
+import com.anmolsekhon.projectludwig.database.DatabaseAccess;
 import com.anmolsekhon.projectludwig.services.FileStorageService;
+import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +35,9 @@ public class FileController {
     private static final Logger logger = LoggerFactory.getLogger(FileController.class);
 
     @Autowired
+    protected DatabaseAccess da;
+
+    @Autowired
     private FileStorageService fileStorageService;
 
     @PostMapping("/uploadFile")
@@ -42,6 +48,10 @@ public class FileController {
                 .path("/downloadFile/")
                 .path(filename)
                 .toUriString();
+
+        System.out.println("filename: " + filename);
+        System.out.println("file download URL: " + fileDownloadUri);
+        da.insertSong(new Song(filename));
 
         return new UploadFileResponse(filename, fileDownloadUri, file.getContentType(), file.getSize());
     }
@@ -75,16 +85,22 @@ public class FileController {
     }
 
     @GetMapping("/getAllFilenames")
+
     public String getAllFilenames() {
-        try (Stream<Path> walk = Files.walk(Paths.get("uploads"))) {
-
-            List<String> result = walk.filter(Files::isRegularFile)
-                    .map(x -> "\"" + x.toString().substring(8) + "\"").collect(Collectors.toList());
-
-            return result.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "";
-        }
+        List <Song> songs = da.getAllFilenames();
+        return new Gson().toJson(songs);
     }
+
+//    public String getAllFilenames() {
+//        try (Stream<Path> walk = Files.walk(Paths.get("uploads"))) {
+//
+//            List<String> result = walk.filter(Files::isRegularFile)
+//                    .map(x -> "\"" + x.toString().substring(8) + "\"").collect(Collectors.toList());
+//
+//            return result.toString();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            return "";
+//        }
+//    }
 }
